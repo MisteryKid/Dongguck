@@ -60,6 +60,39 @@ def get_walking_distance(start_coords, end_coords, api_key):
     else:
         print("도보 경로를 계산할 수 없습니다.")
 
+'''
+테스트용 코드 
+def main():
+    """
+    사용자 입력을 받아 두 주소 간 첫 번째 도보 거리와 소요 시간을 계산합니다.
+    """
+    api_key = "f03538defb9fffd1f4da8d9e5b0353ea"  # 발급받은 API 키 입력
+    start_place = input("출발지를 입력하세요: ")
+    end_place = input("도착지를 입력하세요: ")
+
+    # 좌표 검색
+    start_coords = get_coordinates(start_place, api_key)
+    end_coords = get_coordinates(end_place, api_key)
+
+    if not start_coords or not end_coords:
+        print("출발지 또는 도착지의 좌표를 찾을 수 없습니다.")
+        return
+
+    print(f"Start Coordinates: {start_coords}")
+    print(f"End Coordinates: {end_coords}")
+
+    # 첫 번째 도보 거리 계산
+    distance_info = get_walking_distance(start_coords, end_coords, api_key)
+    if distance_info["distance"] is not None:
+        print(f"두 지점 간 도보 거리: {distance_info['distance']} 미터")
+        print(f"예상 소요 시간: {distance_info['duration'] // 60} 분 {distance_info['duration'] % 60} 초")
+    else:
+        print("도보 경로를 계산할 수 없습니다.")
 
 if __name__ == "__main__":
     main()
+
+'''
+
+
+
