@@ -34,14 +34,7 @@ class CourseNode:
                 f"end_coordinates='{self.end_coordinates}')")
 
     def convert_to_tuple(self, coord_str):
-        # 문자열 좌표를 튜플로 변환
-        coord_str = coord_str.strip("()")  # 괄호 제거
-        coord_list = coord_str.split(",")  # 쉼표로 분리
-        return float(coord_list[0]), float(coord_list[1])  # 튜플로 변환
-
-
-#카카오 api 키
-api_key = "f03538defb9fffd1f4da8d9e5b0353ea"
+        # 문자열 좌표를 크"
 
 # csv 파일 읽기
 f = open("processed_course_data_with_coordinates_corrections.csv",'r',encoding='utf-8')
