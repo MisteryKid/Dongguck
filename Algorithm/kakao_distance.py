@@ -66,7 +66,7 @@ def main():
     """
     사용자 입력을 받아 두 주소 간 첫 번째 도보 거리와 소요 시간을 계산합니다.
     """
-    api_key = "f03538defb9fffd1f4da8d9e5b0353ea"  # 발급받은 API 키 입력
+    api_key = "가리기 "  # 발급받은 API 키 입력
     start_place = input("출발지를 입력하세요: ")
     end_place = input("도착지를 입력하세요: ")
 
