@@ -1,43 +1,49 @@
 import csv
 import time
+import requests
 
 from kakao_distance import get_coordinates
 from kakao_distance import get_walking_distance
 import heapq
 import math
-import matplotlib.pyplot as plt
-import networkx as nx
 import re
 
 # 구조체
 class CourseNode:
-    def __init__(self, course_name, distance, start_point_name, last_point, course_level, start_latitude=None, start_longitude=None, end_latitude=None, end_longitude=None,course_points=None):
+    def __init__(self, course_name, distance, start_point_name, last_point, course_level, course_points=None, start_coordinates=None, end_coordinates=None):
         self.course_name = course_name
         self.distance = distance
         self.start_point_name = start_point_name
         self.last_point = last_point
         self.course_level = course_level
         self.course_points = course_points # 코스 세부 코스
-        self.start_latitude = start_latitude
-        self.start_longitude = start_longitude
-        self.end_latitude = end_latitude
-        self.end_longitude = end_longitude
-        self.course_points = course_points
+        self.start_coordinates = self.convert_to_tuple(start_coordinates)
+        self.end_coordinates = self.convert_to_tuple(end_coordinates)
 
     def __repr__(self):
         return (f"CourseNode(course_name='{self.course_name}', "
                 f"distance='{self.distance}', "
                 f"start_point_name='{self.start_point_name}', "
                 f"last_point='{self.last_point}', "
-                f"course_level={self.course_level})"
-                f"course_points='{self.course_points}')")
+                f"course_level={self.course_level}', "
+                f"course_points='{self.course_points}', "
+                f"start_coordinates={self.start_coordinates}', "
+                f"end_coordinates='{self.end_coordinates}')")
+
+    def convert_to_tuple(self, coord_str):
+        # 문자열 좌표를 튜플로 변환
+        coord_str = coord_str.strip("()")  # 괄호 제거
+        coord_list = coord_str.split(",")  # 쉼표로 분리
+        return float(coord_list[0]), float(coord_list[1])  # 튜플로 변환
+
 
 #카카오 api 키
 api_key = "f03538defb9fffd1f4da8d9e5b0353ea"
 
 # csv 파일 읽기
-f = open("course_nodes_output.csv",'r',encoding='utf-8')
+f = open("processed_course_data_with_coordinates_corrections.csv",'r',encoding='utf-8')
 rdr = csv.reader(f)
+next(rdr)
 
 #csv 데이터 읽고 저장할 리스트
 course_nodes = []
@@ -48,20 +54,16 @@ for line in rdr:
     start_point_name = line[2]
     last_point = line[3]
     course_level = line[4]
-    course_points =line[5]
-
-
-    #카카오 api를 사용하여 시작점 끝점 좌표 가져오기
-    start_latitude, start_longitude = get_coordinates(start_point_name, api_key)
-    end_latitude, end_longitude = get_coordinates(last_point, api_key)
+    course_points = line[5]
+    start_coordinates = line[6]
+    end_coordinates = line[7]
 
     # CourseNode 객체 생성
-    course_node = CourseNode(course_name, distance, start_point_name, last_point, course_level,
-                             start_latitude, start_longitude, end_latitude, end_longitude, course_points)
-
+    course_node = CourseNode(course_name, distance, start_point_name, last_point, course_level, course_points, start_coordinates, end_coordinates)
     course_nodes.append(course_node)
 
 f.close()
+
 
 # 유클리드 거리 계산 (단위: km)
 def euclidean_distance(lat1, lon1, lat2, lon2):
@@ -80,11 +82,12 @@ def create_edges(course_nodes):
             node2 = course_nodes[j]
 
             # 좌표가 None인 경우 건너뛰기
-            if None in [node1.start_latitude, node1.start_longitude, node2.end_latitude, node2.end_longitude]:
+            if None in [node1.start_coordinates, node2.end_coordinates]:
                 continue
 
-            start_lat1, start_lon1 = node1.start_latitude, node1.start_longitude
-            end_lat2, end_lon2 = node2.end_latitude, node2.end_longitude
+            start_lat1, start_lon1 = node1.start_coordinates[0], node1.start_coordinates[1]
+            print(start_coordinates[0])
+            end_lat2, end_lon2 = node2.end_coordinates[0], node2.end_coordinates[1]
 
             distance = euclidean_distance(start_lat1, start_lon1, end_lat2, end_lon2)
 
@@ -128,6 +131,7 @@ def dijkstra(edges, start_node):
                 heapq.heappush(priority_queue, (distance, neighbor))
 
     return distances, previous_nodes
+
 
 # 경로 역추적 함수
 def get_path(previous_nodes, start_node, end_node):
@@ -184,17 +188,17 @@ path_from_course1_to_course2 = get_path(previous_nodes_from_course1, course1.cou
 # 경로에 포함된 코스들의 세부 정보 출력
 total_dis = 0
 
-
 print("Courses along the path:")
 for i, course_name in enumerate(path_from_course1_to_course2):
 
     # 코스 이름에 해당하는 CourseNode 객체를 찾아서 그 세부 코스를 출력
     course = next(node for node in course_nodes if node.course_name == course_name)
-    print(f"{course.course_name}: {course.course_points} -> 해당 코스의 거리 {course.distance}")
-
+    print(f"{course.course_name}: 코스의 거리 {course.distance}")
+    print(f"{course.course_name}: {course.course_points}")
+    print()
 
     #현 코스의 시작점
-    start_place1 = course.course_points.split("~")[0]
+    start_place1 = course.start_coordinates
 
     # 코스의 거리값에서 km 삭제
     distance = re.findall(r"[\d.]+", course.distance)
@@ -202,22 +206,18 @@ for i, course_name in enumerate(path_from_course1_to_course2):
     # 두번째 코스를 순회하게 될 때 부터 두 코스간 거리 측정
     if i>0:
         prev_course = next(node for node in course_nodes if node.course_name == path_from_course1_to_course2[i - 1])
-        end_place1 = course.course_points.split("~")[-1]
-        start_coords1 = get_coordinates(start_place1, api_key)
-        end_coords1 = get_coordinates(end_place1, api_key)
-
-        if not start_coords1 or not end_coords1:
-            print("출발지 또는 도착지의 좌표를 찾을 수 없습니다.")
+        end_place1 = course.end_coordinates
 
         # 두 코스 간 도보 거리 계산 (이전 코스 끝 지점과 현재 코스 시작 지점 간의 거리)
-        distance_info = get_walking_distance(start_coords1, end_coords1, api_key)
+        distance_info = get_walking_distance(start_place1, end_place1, api_key)
         if distance_info["distance"] is not None:
-
-            total_dis = total_dis+distance_info["distance"]/1000
+            total_dis = total_dis + distance_info["distance"]/1000
+            print(f"{prev_course.course_name}와 {course_name} 사이 거리 계산")
+            print()
 
     if distance:
         total_dis += float(distance[0])  # 리스트에서 첫 번째 값만 사용하고 float으로 변환
 
-print(f"당신이 산책할 총 거리 : {total_dis} km")
+print(f"당신이 산책할 총 거리 : {total_dis:.4f} km")
 execution_time = end_time - start_time
 print(f"다익스트라 알고리즘 실행 시간: {execution_time:.4f} seconds")
