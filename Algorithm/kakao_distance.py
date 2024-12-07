@@ -37,36 +37,7 @@ def get_walking_distance(start_coords, end_coords, api_key):
     """
     두 좌표 간 첫 번째 도보 거리와 소요 시간을 반환합니다.
     """
-    url = "https://apis-navi.kakaomobility.com/v1/directions"
-    headers = {"Authorization": f"KakaoAK {api_key}"}
-    params = {
-        "origin": f"{start_coords[0]},{start_coords[1]}",
-        "destination": f"{end_coords[0]},{end_coords[1]}",
-        "vehicleType": 1  # 도보 경로
-    }
-
-    response = requests.get(url, headers=headers, params=params)
-    if response.status_code == 200:
-        routes = response.json().get("routes", [])
-        if routes:
-            # 첫 번째 경로 선택
-            first_route = routes[0]
-            distance = first_route["summary"]["distance"]  # 거리 (미터)
-            duration = first_route["summary"]["duration"]  # 소요 시간 (초)
-            print(f"Walking Distance: {distance} meters, Duration: {duration // 60} minutes")
-            return {"distance": distance, "duration": duration}
-        else:
-            print("No walking route found.")
-    else:
-        print(f"Failed to calculate walking distance. Status Code: {response.status_code}")
-    return {"distance": None, "duration": None}
-
-
-def main():
-    """
-    사용자 입력을 받아 두 주소 간 첫 번째 도보 거리와 소요 시간을 계산합니다.
-    """
-    api_key = "f03538defb9fffd1f4da8d9e5b0353ea"  # 발급받은 API 키 입력
+    url = "https://apis-navi.kakaomobility.com/v크"  # 발급받은 API 키 입력
     start_place = input("출발지를 입력하세요: ")
     end_place = input("도착지를 입력하세요: ")
 
