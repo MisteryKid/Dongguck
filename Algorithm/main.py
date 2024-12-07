@@ -36,6 +36,9 @@ class CourseNode:
     def convert_to_tuple(self, coord_str):
         # 문자열 좌표를 크"
 
+#카카오 api 키
+api_key = "api 키 넣어주기 "
+        
 # csv 파일 읽기
 f = open("processed_course_data_with_coordinates_corrections.csv",'r',encoding='utf-8')
 rdr = csv.reader(f)
