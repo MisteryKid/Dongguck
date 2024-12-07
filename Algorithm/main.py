@@ -1,3 +1,6 @@
+'''
+csv 데이터를 바탕으로 노드와 간선을 포함한 그래프를 그리고 다익스트 알고리즘을 이용해 최단거리 찾고 출력하는 코드
+'''
 import csv
 import time
 import requests
