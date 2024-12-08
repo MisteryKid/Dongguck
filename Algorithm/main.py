@@ -1,6 +1,3 @@
-'''
-csv 데이터를 바탕으로 노드와 간선을 포함한 그래프를 그리고 다익스트 알고리즘을 이용해 최단거리 찾고 출력하는 코드
-'''
 import csv
 import time
 import requests
@@ -34,11 +31,15 @@ class CourseNode:
                 f"end_coordinates='{self.end_coordinates}')")
 
     def convert_to_tuple(self, coord_str):
-        # 문자열 좌표를 크"
+        # 문자열 좌표를 튜플로 변환
+        coord_str = coord_str.strip("()")  # 괄호 제거
+        coord_list = coord_str.split(",")  # 쉼표로 분리
+        return float(coord_list[0]), float(coord_list[1])  # 튜플로 변환
+
 
 #카카오 api 키
-api_key = "api 키 넣어주기 "
-        
+api_key = ""
+
 # csv 파일 읽기
 f = open("processed_course_data_with_coordinates_corrections.csv",'r',encoding='utf-8')
 rdr = csv.reader(f)
@@ -63,13 +64,19 @@ for line in rdr:
 
 f.close()
 
-
-# 유클리드 거리 계산 (단위: km)
-def euclidean_distance(lat1, lon1, lat2, lon2):
-
+# 지구의 곡률을 고려한 거리 계산 (단위: km)
+def haversine_distance(lat1, lon1, lat2, lon2):
     if None in [lat1, lon1, lat2, lon2]:
         return None  # 좌표가 None이면 거리 계산을 하지 않음
-    return math.sqrt((lat2 - lat1)**2 + (lon2 - lon1)**2)
+
+    R = 6371  # 지구 반지름 (단위: km)
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])  # 각도를 라디안으로 변환
+
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
 
 
 # 두 객체 간의 거리 비교 (간선)
@@ -88,10 +95,12 @@ def create_edges(course_nodes):
             print(start_coordinates[0])
             end_lat2, end_lon2 = node2.end_coordinates[0], node2.end_coordinates[1]
 
-            distance = euclidean_distance(start_lat1, start_lon1, end_lat2, end_lon2)
+            distance = haversine_distance(start_lat1, start_lon1, end_lat2, end_lon2)
+
 
             # 거리 기준에 맞는 간선 추가 (distance가 None이 아니고 3km 이하일 경우)
             if distance is not None and distance <= 3:  # 3km 이하일 때 간선을 그린다.
+                #print(node1.course_name, distance)
                 if node1.course_name not in edges:
                     edges[node1.course_name] = []
                 if node2.course_name not in edges:
@@ -178,7 +187,6 @@ print(f"You selected {course1.course_name} and {course2.course_name}.")
 # 다익스트라 알고리즘 실행
 start_time = time.perf_counter()
 distances_from_course1, previous_nodes_from_course1 = dijkstra(edges, course1.course_name)
-distances_from_course2, previous_nodes_from_course2 = dijkstra(edges, course2.course_name)
 end_time = time.perf_counter()
 
 # 경로 역추적
@@ -199,19 +207,21 @@ for i, course_name in enumerate(path_from_course1_to_course2):
     #현 코스의 시작점
     start_place1 = course.start_coordinates
 
+
     # 코스의 거리값에서 km 삭제
     distance = re.findall(r"[\d.]+", course.distance)
 
     # 두번째 코스를 순회하게 될 때 부터 두 코스간 거리 측정
     if i>0:
         prev_course = next(node for node in course_nodes if node.course_name == path_from_course1_to_course2[i - 1])
-        end_place1 = course.end_coordinates
+        end_place1 = prev_course.end_coordinates
 
         # 두 코스 간 도보 거리 계산 (이전 코스 끝 지점과 현재 코스 시작 지점 간의 거리)
+
         distance_info = get_walking_distance(start_place1, end_place1, api_key)
         if distance_info["distance"] is not None:
             total_dis = total_dis + distance_info["distance"]/1000
-            print(f"{prev_course.course_name}와 {course_name} 사이 거리 계산")
+            print(f"    {prev_course.course_name}와 {course_name} 사이 거리 계산")
             print()
 
     if distance:
